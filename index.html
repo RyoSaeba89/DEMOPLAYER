@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>DEMOPLAYER v4.0 — Cracktro Edition</title>
+
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src  'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval';
+  script-src-elem 'self' 'unsafe-inline';
+  worker-src  'self' blob:;
+  style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src    'self' https://fonts.gstatic.com;
+  img-src     'self' data: blob:;
+  media-src   'self' blob:;
+  connect-src 'self' blob: data: https://pub-74e1e6ec679245f6b7dc7c3b16c831aa.r2.dev;
+  frame-src   'none';
+  object-src  'none';
+  base-uri    'self';
+  form-action 'none';
+">
+
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
+
+<link rel="stylesheet" href="style.css">
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./coi-serviceworker.js").then((reg) => {
+      if (!crossOriginIsolated) {
+        reg.addEventListener("updatefound", () => location.reload());
+        if (reg.active) location.reload();
+      }
+    });
+  }
+</script>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div id="scanlines"></div>
+
+<div id="app">
+
+  <header id="header">
+    <div class="logo-group">
+      <div class="logo-ascii" aria-hidden="true">
+        <span class="logo-bracket">[</span><span class="logo-text">DEMOPLAYER</span><span class="logo-bracket">]</span>
+      </div>
+      <div class="version-badge">v4.0</div>
+    </div>
+    <div class="header-right">
+      <div class="badges">
+        <span class="bdg b-mod" title="ProTracker / FastTracker modules">MOD</span>
+        <span class="bdg b-xm" title="FastTracker II Extended Module">XM</span>
+        <span class="bdg b-it" title="Impulse Tracker">IT</span>
+        <span class="bdg b-s3m" title="Scream Tracker 3">S3M</span>
+        <span class="bdg b-v2m" title="farbrausch V2 Synthesizer">V2M</span>
+        <span class="bdg b-mid" title="Standard MIDI File">MID</span>
+      </div>
+      <div class="header-sub">CRACKTRO EDITION</div>
+    </div>
+  </header>
+
+  <div id="scroll-wrap" class="inset-frame">
+    <canvas id="sineCanvas"></canvas>
+    <div id="scrolltext" style="display:none;">&#9733; DEMOPLAYER v4.0 &#9733; CRACKTRO EDITION &#9733; GREETINGS TO ALL DEMOSCENERS &#9733; SUPPORT: MOD / XM / IT / S3M / V2M / MIDI &#9733; POWERED BY LIBOPENMPT + V2M + GM SYNTH &#9733; DRAG &amp; DROP YOUR MODULES &#9733; CODED WITH LOVE FOR THE SCENE &#9733; STAY OLDSCHOOL &#9733;</div>
+  </div>
+
+  <div id="viz-wrap" class="inset-frame">
+    <canvas id="vizCanvas"></canvas>
+    <div class="viz-label">[ SPECTRUM ANALYZER ]</div>
+  </div>
+
+  <div id="now-sec" class="panel-frame">
+    <div class="now-icon" id="now-icon" aria-hidden="true">
+      <svg viewBox="0 0 16 16" width="16" height="16"><use href="#icon-chip"/></svg>
+    </div>
+    <span id="now-lbl">NOW PLAYING</span>
+    <span id="now-ttl">&mdash; no file loaded &mdash;</span>
+    <span id="now-ext"></span>
+  </div>
+
+  <div id="meta">
+    <div class="mc inset-frame">
+      <div class="mc-l">TYPE</div>
+      <div class="mc-v" id="mT">&mdash;</div>
+    </div>
+    <div class="mc inset-frame">
+      <div class="mc-l">PAT</div>
+      <div class="mc-v" id="mC">&mdash;</div>
+    </div>
+    <div class="mc inset-frame">
+      <div class="mc-l">POS</div>
+      <div class="mc-v" id="mO">&mdash;</div>
+    </div>
+  </div>
+
+  <div id="prog">
+    <div id="pbar" class="inset-frame"><div id="pfill"></div></div>
+    <div id="trow"><span id="tC">0:00</span><span id="tT">0:00</span></div>
+  </div>
+
+  <div id="transport">
+    <div class="transport-btns">
+      <button class="tb" id="bPrev" title="Previous track">&#9198;</button>
+      <button class="tb" id="bStop" title="Stop">&#9209;</button>
+      <button class="tb pmain" id="bPlay" title="Play / Pause">&#9654;</button>
+      <button class="tb" id="bNext" title="Next track">&#9197;</button>
+      <button class="tb tbtxt" id="bLoop" title="Loop playlist">RPT</button>
+      <button class="tb tbtxt" id="bShuf" title="Shuffle (no repeat)">RND</button>
+    </div>
+    <div class="vwrap">
+      <span class="vlbl">VOL</span>
+      <input type="range" id="vol" min="0" max="100" value="80" title="Volume">
+      <span class="vol-val" id="volVal">80</span>
+    </div>
+  </div>
+
+  <div id="plsec" class="panel-frame">
+    <div id="plhdr">
+      <span class="plhdr-title">PLAYLIST <span id="plCnt"></span></span>
+<div class="pla">
+        <button class="ab ab-playlist" id="bRyo">[ RYO'S PLAYLIST (7H30) ]</button>
+        <button class="ab ab-playlist" id="bKgm">[ KEYGENMUSiC ARCHIVE (190H00) ]</button>
+        <button class="ab" id="bAdd">+ ADD</button>
+        <button class="ab" id="bScan">[SCAN DIR]</button>
+        <button class="ab ab-danger" id="bClr">CLEAR</button>
+      </div>
+    </div>
+    <div id="plbox"></div>
+    <div id="empty">
+      <div class="ea">
+        <svg viewBox="0 0 48 48" width="48" height="48" class="ea-icon">
+          <text x="24" y="32" text-anchor="middle" font-size="28" fill="currentColor">&#9835;</text>
+        </svg>
+      </div>
+      <div class="em">DRAG &amp; DROP MODULE FILES<br>OR CLICK [+ ADD] / [SCAN DIR]</div>
+      <div class="ef">MOD &middot; XM &middot; IT &middot; S3M &middot; V2M &middot; MID</div>
+    </div>
+  </div>
+
+  <div id="sbar" class="panel-frame">
+    <span id="smsg">INITIALIZING...</span>
+    <span id="plInfo"></span>
+    <span id="seng">libopenmpt engine</span>
+  </div>
+
+</div>
+
+<div id="dz">
+  <div class="dzb"><span>DROP<br>HERE</span></div>
+  <div class="dzs">MOD &middot; XM &middot; IT &middot; S3M &middot; V2M &middot; MID</div>
+</div>
+
+<input type="file" id="fIn" multiple accept=".mod,.xm,.it,.s3m,.v2m,.mid,.midi,.mptm,.med,.oct,.okt,.stm,.669,.far,.amf,.ams,.dbm,.dmf,.dsm,.umx,.mt2,.psm,.j2b,.gdm,.imf,.ptm,.sfx,.mo3,.mtm" style="display:none">
+<input type="file" id="fDir" multiple webkitdirectory directory style="display:none">
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <defs>
+    <symbol id="icon-chip" viewBox="0 0 16 16">
+      <rect x="3" y="3" width="10" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1"/>
+      <rect x="5" y="5" width="6" height="6" fill="currentColor" opacity="0.3"/>
+      <line x1="6" y1="1" x2="6" y2="3" stroke="currentColor" stroke-width="1"/>
+      <line x1="10" y1="1" x2="10" y2="3" stroke="currentColor" stroke-width="1"/>
+      <line x1="6" y1="13" x2="6" y2="15" stroke="currentColor" stroke-width="1"/>
+      <line x1="10" y1="13" x2="10" y2="15" stroke="currentColor" stroke-width="1"/>
+      <line x1="1" y1="6" x2="3" y2="6" stroke="currentColor" stroke-width="1"/>
+      <line x1="1" y1="10" x2="3" y2="10" stroke="currentColor" stroke-width="1"/>
+      <line x1="13" y1="6" x2="15" y2="6" stroke="currentColor" stroke-width="1"/>
+      <line x1="13" y1="10" x2="15" y2="10" stroke="currentColor" stroke-width="1"/>
+    </symbol>
+    <symbol id="icon-v2m" viewBox="0 0 16 16">
+      <rect x="1" y="2" width="14" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1"/>
+      <polyline points="3,8 5,4 7,11 9,5 11,10 13,6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="icon-midi" viewBox="0 0 16 16">
+      <rect x="1" y="2" width="14" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1"/>
+      <line x1="4" y1="2" x2="4" y2="14" stroke="currentColor" stroke-width="0.5"/>
+      <line x1="7" y1="2" x2="7" y2="14" stroke="currentColor" stroke-width="0.5"/>
+      <line x1="10" y1="2" x2="10" y2="14" stroke="currentColor" stroke-width="0.5"/>
+      <line x1="13" y1="2" x2="13" y2="14" stroke="currentColor" stroke-width="0.5"/>
+      <rect x="3" y="2" width="2" height="7" fill="currentColor" opacity="0.5"/>
+      <rect x="8" y="2" width="2" height="7" fill="currentColor" opacity="0.5"/>
+      <rect x="11" y="2" width="2" height="7" fill="currentColor" opacity="0.5"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+(function() {
+  const canvas = document.getElementById('sineCanvas');
+  const ctx = canvas.getContext('2d');
+  const wrap = document.getElementById('scroll-wrap');
+
+  const TEXT = '\u2605 DEMOPLAYER v4.0 \u2605 CRACKTRO EDITION \u2605 GREETINGS TO ALL DEMOSCENERS \u2605 SUPPORT: MOD / XM / IT / S3M / V2M / MIDI \u2605 POWERED BY LIBOPENMPT + V2M + GM SYNTH \u2605 DRAG & DROP YOUR MODULES \u2605 CODED WITH LOVE FOR THE SCENE \u2605 STAY OLDSCHOOL \u2605    ';
+
+  let W = 0, H = 0, scrollX = 0;
+  const CHAR_W = 14;
+  const AMPLITUDE = 6;
+  const FREQUENCY = 0.07;
+  const SPEED = 1.2;
+  let phase = 0;
+
+  function resize() {
+    const r = wrap.getBoundingClientRect();
+    W = Math.floor(r.width);
+    H = Math.floor(r.height);
+    canvas.width = W;
+    canvas.height = H;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.font = '600 14px "IBM Plex Mono", monospace';
+    ctx.textBaseline = 'middle';
+
+    const totalW = TEXT.length * CHAR_W;
+    const centerY = H / 2;
+
+    for (let i = 0; i < TEXT.length; i++) {
+      const x = scrollX + i * CHAR_W;
+      let drawX = ((x % totalW) + totalW) % totalW;
+      if (drawX > W + CHAR_W) continue;
+      if (drawX < -CHAR_W) continue;
+
+      const sineOffset = Math.sin(phase + i * FREQUENCY) * AMPLITUDE;
+      const y = centerY + sineOffset;
+
+      const brightness = 0.7 + 0.3 * Math.sin(phase + i * 0.15);
+      const t = (Math.sin(phase * 0.5 + i * 0.08) + 1) / 2;
+      const r = Math.floor(lerp(0, 255, t * 0.4));
+      const g = Math.floor(lerp(255, 180, t));
+      const b = Math.floor(lerp(204, 255, t * 0.8));
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${brightness})`;
+      ctx.shadowColor = `rgba(${r},${g},${b},0.5)`;
+      ctx.shadowBlur = 6;
+      ctx.fillText(TEXT[i], drawX, y);
+    }
+    ctx.shadowBlur = 0;
+
+    scrollX -= SPEED;
+    if (scrollX <= -totalW) scrollX += totalW;
+    phase += 0.03;
+
+    requestAnimationFrame(draw);
+  }
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  resize();
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(draw);
+})();
+</script>
+
+<script>
+(function() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  const stars = [];
+  const STAR_COUNT = 120;
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function init() {
+    resize();
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        size: Math.random() * 1.5 + 0.3,
+        speed: Math.random() * 0.3 + 0.05,
+        brightness: Math.random()
+      });
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    ctx.fillRect(0, 0, W, H);
+
+    for (const s of stars) {
+      s.y += s.speed;
+      s.brightness += (Math.random() - 0.5) * 0.05;
+      s.brightness = Math.max(0.2, Math.min(1, s.brightness));
+      if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(100,200,180,${s.brightness * 0.5})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  init();
+  window.addEventListener('resize', resize);
+  draw();
+})();
+</script>
+
+<script>
+(function() {
+  const vol = document.getElementById('vol');
+  const volVal = document.getElementById('volVal');
+  if (vol && volVal) {
+    vol.addEventListener('input', () => { volVal.textContent = vol.value; });
+  }
+
+  const nowIcon = document.getElementById('now-icon');
+  const nowExt = document.getElementById('now-ext');
+  if (nowIcon && nowExt) {
+    const observer = new MutationObserver(() => {
+      const ext = (nowExt.textContent || '').trim().toLowerCase();
+      let iconId = 'icon-chip';
+      let colorClass = 'icon-chip';
+      if (ext === 'v2m') { iconId = 'icon-v2m'; colorClass = 'icon-v2m'; }
+      else if (ext === 'mid' || ext === 'midi') { iconId = 'icon-midi'; colorClass = 'icon-midi'; }
+      nowIcon.innerHTML = `<svg viewBox="0 0 16 16" width="16" height="16"><use href="#${iconId}"/></svg>`;
+      nowIcon.className = 'now-icon ' + colorClass;
+    });
+    observer.observe(nowExt, { childList: true, characterData: true, subtree: true });
+  }
+
+  const plbox = document.getElementById('plbox');
+  if (plbox) {
+    const plObserver = new MutationObserver(() => {
+      plbox.querySelectorAll('.pe').forEach(el => {
+        if (el.dataset.ext) return; 
+        const ext = (el.textContent || '').trim().toLowerCase();
+        el.dataset.ext = ext;
+      });
+    });
+    plObserver.observe(plbox, { childList: true, subtree: true });
+  }
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    return false;
+  }, { capture: true });
+
+  document.addEventListener('selectstart', function(e) {
+    if (e.target.closest && e.target.closest('#plbox')) return;
+    e.preventDefault();
+    return false;
+  }, { capture: true });
+
+  document.addEventListener('dragstart', function(e) {
+    if (e.target.tagName === 'INPUT' && e.target.type === 'file') return;
+    e.preventDefault();
+    return false;
+  }, { capture: true });
+
+  var BLOCKED_KEYS = { 'F12': true };
+
+  document.addEventListener('keydown', function(e) {
+    if (BLOCKED_KEYS[e.key] || BLOCKED_KEYS[e.code]) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' ||
+        e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if (e.ctrlKey && (e.key === 'U' || e.key === 'u') && !e.shiftKey && !e.altKey) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+    if (e.ctrlKey && (e.key === 'S' || e.key === 's') && !e.shiftKey && !e.altKey) {
+      e.preventDefault(); e.stopPropagation(); return false;
+    }
+  }, { capture: true });
+
+  if (window.top !== window.self) {
+    try { window.top.location.href = window.self.location.href; } 
+    catch (e) { document.documentElement.style.display = 'none'; }
+  }
+
+  window.addEventListener('load', function() {
+    var testDiv = document.createElement('div');
+    testDiv.textContent = '<img src=x onerror=alert(1)>';
+    var escaped = testDiv.innerHTML;
+    if (escaped.indexOf('<img') !== -1) {
+      console.error('[SECURITY] HTML escaping mechanism compromised');
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && (e.key === 'a' || e.key === 'A') && !e.shiftKey) {
+      if (!(e.target.closest && e.target.closest('#plbox'))) {
+        e.preventDefault(); return false;
+      }
+    }
+  }, { capture: true });
+
+})();
+</script>
+
+<script type="module" src="player.js"></script>
+</body>
+</html>
