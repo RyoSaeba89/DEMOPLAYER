@@ -57,6 +57,7 @@ function boot(){
         try{player.gain.disconnect()}catch(e){}
         player.gain.connect(analyser);
         analyser.connect(audioCtx.destination);
+        audioCtx.onstatechange=()=>{ if(audioCtx.state==="suspended"&&playing&&!paused) audioCtx.resume(); };
       }
 
       // Events (assigned AFTER init)
@@ -330,6 +331,7 @@ async function doPlay(i){
         
         playing=true; paused=false;
         bPlay.textContent='\u23F8';
+        updateMediaSession(it.name);
         stat('PLAYING: '+it.name+' [V2M]','ok');
         mT.textContent='V2M (farbrausch)';
         mC.textContent='\u2014';
@@ -383,6 +385,7 @@ async function doPlay(i){
         
         playing=true; paused=false;
         bPlay.textContent='\u23F8';
+        updateMediaSession(it.name);
         stat('PLAYING: '+it.name+' [MIDI]','ok');
         mT.textContent='MIDI (Standard MIDI File)';
         mC.textContent= it.midiChannels ? it.midiChannels : '\u2014';
@@ -427,6 +430,7 @@ async function doPlay(i){
     player.play(trackBuf);
     playing=true; paused=false;
     bPlay.textContent='\u23F8';
+    updateMediaSession(it.name);
     stat('PLAYING: '+it.name,'ok');
     if(player.gain) player.gain.gain.value=g('vol').value/100;
     startTimer();
@@ -498,6 +502,7 @@ function doToggle(){
     }
   }
   bPlay.textContent=paused?'\u25B6':'\u23F8';
+  setMediaSessionPaused(paused);
   stat(paused?'PAUSED':'PLAYING: '+pl[ci].name,'ok');
 }
 
@@ -510,6 +515,7 @@ function doStop(){
   pfill.style.width='0%'; tC.textContent='0:00';
   stopTimer();
   highlightActive();
+  if("mediaSession" in navigator) navigator.mediaSession.playbackState="none";
   stat('STOPPED','ok');
   g('seng').textContent='libopenmpt engine';
 }
@@ -582,6 +588,12 @@ function doPrev(){
 function doLoop(){
   looping=!looping;
   bLoop.classList.toggle('toggled',looping);
+  if(looping && shuffling){
+    shuffling=false;
+    bShuf.classList.remove('toggled');
+    shuffleHistory=[];
+    stat('REPEAT ON — NO SHUFFLE','ok');
+  }
 }
 function doShuffle(){
   shuffling=!shuffling;
@@ -610,6 +622,24 @@ function pickShuffle(){
   const pick=avail[Math.floor(Math.random()*avail.length)];
   shuffleHistory.push(pick);
   return pick;
+}
+
+/* ══════════════════════════════════════════════════
+   MEDIA SESSION  (background audio on mobile)
+   ══════════════════════════════════════════════════ */
+function updateMediaSession(name){
+  if(!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({ title: name, artist: 'DEMOPLAYER', album: 'Keygen Music' });
+  navigator.mediaSession.setActionHandler('play',         ()=>{ if(!playing||paused) doToggle(); });
+  navigator.mediaSession.setActionHandler('pause',        ()=>{ if(playing&&!paused) doToggle(); });
+  navigator.mediaSession.setActionHandler('stop',         doStop);
+  navigator.mediaSession.setActionHandler('nexttrack',    doNext);
+  navigator.mediaSession.setActionHandler('previoustrack',doPrev);
+  navigator.mediaSession.playbackState = 'playing';
+}
+function setMediaSessionPaused(p){
+  if(!('mediaSession' in navigator)) return;
+  navigator.mediaSession.playbackState = p ? 'paused' : 'playing';
 }
 
 /* ══════════════════════════════════════════════════
