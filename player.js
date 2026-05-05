@@ -555,6 +555,10 @@ function doSeek(e){
    AUTO-NEXT / SHUFFLE
    ══════════════════════════════════════════════════ */
 function autoNext(){
+  if(looping && ci>=0){
+    setTimeout(()=>doPlay(ci),300);
+    return;
+  }
   if(shuffling){
     const nx=pickShuffle();
     if(nx>=0){ setTimeout(()=>doPlay(nx),300); }
@@ -564,8 +568,6 @@ function autoNext(){
     }
   } else if(ci<pl.length-1){
     setTimeout(()=>doPlay(ci+1),300);
-  } else if(looping&&pl.length){
-    setTimeout(()=>doPlay(0),300);
   } else {
     stat('PLAYBACK ENDED','ok');
   }
